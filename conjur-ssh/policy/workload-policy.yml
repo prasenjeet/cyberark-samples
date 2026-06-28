@@ -1,0 +1,101 @@
+---
+# =============================================================================
+# Conjur Workload Identity Policy for SSH Certificate Issuance
+# workload-policy.yml
+#
+# Defines workload identities (CI/CD pipelines, services) and grants them
+# the ability to request SSH certificates for automated deployments.
+#
+# Load with:
+#   conjur policy load -b root -f workload-policy.yml
+# =============================================================================
+
+- !policy
+  id: workloads
+  annotations:
+    description: Workload identities authorized for SSH certificate issuance
+
+  body:
+
+    # -------------------------------------------------------------------------
+    # CI/CD Pipeline Identity
+    # Represents the deployment pipeline (GitHub Actions, Jenkins, etc.)
+    # -------------------------------------------------------------------------
+    - !host
+      id: cicd/deployment-pipeline
+      annotations:
+        description: GitHub Actions deployment workflow
+        authn-jwt/project: myorg/myrepo
+        authn-jwt/ref: refs/heads/main
+
+    # -------------------------------------------------------------------------
+    # Microservice Identities
+    # Represents application services that need SSH access at runtime.
+    # -------------------------------------------------------------------------
+    - !host
+      id: services/app-server
+      annotations:
+        description: Application server needing SSH access to database hosts
+
+    - !host
+      id: services/monitoring-agent
+      annotations:
+        description: Monitoring agent needing read-only SSH access
+
+    # -------------------------------------------------------------------------
+    # Grant CI/CD pipeline access to request web-server + database certificates
+    # -------------------------------------------------------------------------
+    - !grant
+      role: !group /ssh/principals/web-servers
+      member: !host cicd/deployment-pipeline
+
+    - !grant
+      role: !group /ssh/principals/database-servers
+      member: !host cicd/deployment-pipeline
+
+    # -------------------------------------------------------------------------
+    # Grant app-server access to database certificate principal
+    # -------------------------------------------------------------------------
+    - !grant
+      role: !group /ssh/principals/database-servers
+      member: !host services/app-server
+
+    # -------------------------------------------------------------------------
+    # Grant monitoring agent access to all-servers principal (read-only by
+    # convention — enforce at the OS level with a restricted shell account)
+    # -------------------------------------------------------------------------
+    - !grant
+      role: !group /ssh/principals/all-servers
+      member: !host services/monitoring-agent
+
+    # -------------------------------------------------------------------------
+    # Allow all workloads to request certificates from the SSH CA
+    # -------------------------------------------------------------------------
+    - !grant
+      role: !group /ssh/certificate-requesters
+      members:
+        - !host cicd/deployment-pipeline
+        - !host services/app-server
+        - !host services/monitoring-agent
+
+# =============================================================================
+# Human User Grants
+# Add human Conjur users/groups to the certificate-requesters group
+# so they can request certificates via the CLI or PVWA.
+# =============================================================================
+
+- !grant
+  role: !group /ssh/principals/web-servers
+  members:
+    - !group /your-ldap-group-for-web-admins    # Replace with your LDAP group
+
+- !grant
+  role: !group /ssh/principals/database-servers
+  members:
+    - !group /your-ldap-group-for-dba           # Replace with your LDAP group
+
+- !grant
+  role: !group /ssh/certificate-requesters
+  members:
+    - !group /your-ldap-group-for-web-admins
+    - !group /your-ldap-group-for-dba

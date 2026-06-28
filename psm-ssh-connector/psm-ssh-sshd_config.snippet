@@ -1,0 +1,64 @@
+# =============================================================================
+# PSM SSH Gateway — sshd_config Snippet
+#
+# Add these settings to the PSM server's /etc/ssh/sshd_config (Linux PSM)
+# or %ProgramData%\ssh\sshd_config (Windows PSM with OpenSSH).
+#
+# These settings control how end users authenticate to the PSM SSH gateway
+# (not how PSM connects to the target system).
+# =============================================================================
+
+# Allow only SSH protocol version 2.
+Protocol 2
+
+# Supported key exchange algorithms (disable weak ones).
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group14-sha256
+
+# Ciphers — disable weak/deprecated ciphers.
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+# MACs — disable MD5 and SHA1-based MACs.
+MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
+
+# Authentication methods for users connecting to the PSM gateway.
+# CyberArk PAM supports password, publickey, and keyboard-interactive.
+PasswordAuthentication yes
+PubkeyAuthentication yes
+ChallengeResponseAuthentication no
+
+# Disable root login to the PSM gateway.
+PermitRootLogin no
+
+# Restrict login to members of the cyberark-psm-users group.
+# CyberArk user names are passed in the format: <vault-user>@<safe>@<account>
+# AllowGroups cyberark-psm-users
+
+# Log all authentication attempts at VERBOSE level for SIEM integration.
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+# Disconnect unresponsive sessions after 3 keep-alive failures × 60 seconds.
+ClientAliveInterval 60
+ClientAliveCountMax 3
+
+# Disable TCP port forwarding — PSM handles all tunneling internally.
+AllowTcpForwarding no
+X11Forwarding no
+AllowStreamLocalForwarding no
+
+# PSM requires a PTY for session recording.
+# Do NOT set "PermitTTY no" globally — PSM sessions need a TTY.
+
+# Banner shown to users before authentication.
+Banner /etc/ssh/cyberark_psm_banner.txt
+
+# Maximum authentication attempts before disconnecting.
+MaxAuthTries 3
+
+# Limit concurrent sessions per connection (PSM manages session multiplexing).
+MaxSessions 10
+
+# Idle timeout — disconnect sessions with no activity for 30 minutes.
+# Works in conjunction with the PSM IdleTimeoutMinutes setting.
+# LoginGraceTime applies only during the authentication phase.
+LoginGraceTime 60

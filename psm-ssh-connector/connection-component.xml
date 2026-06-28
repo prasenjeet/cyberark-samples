@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CyberArk PSM SSH Connection Component
+  ======================================
+  Import this file via:
+    PVWA → Administration → Platform Management → Connection Components → Import
+
+  This component configures how PSM establishes SSH connections to target
+  systems on behalf of authenticated users.
+-->
+<PSMConnectors>
+  <PSMConnector
+    ID="PSM-SSH"
+    DisplayName="SSH"
+    Enabled="Yes"
+    Description="Proxied SSH session via CyberArk PSM with full session recording">
+
+    <!-- =====================================================================
+         Connection Settings
+         ===================================================================== -->
+    <ConnectionClientSettings>
+      <!-- The PSM launches an SSH client internally — no client binary needed
+           on the user's workstation when using the web-based PVWA launcher. -->
+      <ClientApp>PSM-SSH</ClientApp>
+
+      <!-- SSH protocol version. Always use v2. -->
+      <SSHVersion>2</SSHVersion>
+
+      <!-- Target SSH port — overridden per-account by the Port property. -->
+      <DefaultPort>22</DefaultPort>
+
+      <!-- Connection timeout in seconds before PSM reports failure. -->
+      <ConnectionTimeout>30</ConnectionTimeout>
+
+      <!-- Request a PTY for interactive sessions. Required for most targets. -->
+      <AllocatePTY>Yes</AllocatePTY>
+
+      <!-- Terminal dimensions sent to the target. -->
+      <TerminalColumns>220</TerminalColumns>
+      <TerminalRows>50</TerminalRows>
+
+      <!-- Keep-alive interval (seconds) to prevent idle disconnects. -->
+      <ServerAliveInterval>60</ServerAliveInterval>
+      <ServerAliveCountMax>3</ServerAliveCountMax>
+    </ConnectionClientSettings>
+
+    <!-- =====================================================================
+         Authentication
+         ===================================================================== -->
+    <Authentication>
+      <!-- PSM retrieves the password from the Vault and injects it
+           transparently. The user never sees the credential. -->
+      <Method>Password</Method>
+
+      <!-- Optionally enable key-based authentication when Conjur or the Vault
+           stores an SSH private key instead of a password. -->
+      <!-- <Method>PublicKey</Method> -->
+
+      <!-- StrictHostKeyChecking: set to "yes" in production environments
+           where target host keys are pre-registered. Use "no" only during
+           initial onboarding or in lab environments. -->
+      <StrictHostKeyChecking>no</StrictHostKeyChecking>
+    </Authentication>
+
+    <!-- =====================================================================
+         Session Recording
+         ===================================================================== -->
+    <SessionRecording>
+      <!-- Record all session I/O for audit and playback. -->
+      <EnableRecording>Yes</EnableRecording>
+
+      <!-- Also capture keystrokes in a searchable text format. -->
+      <EnableTextRecording>Yes</EnableTextRecording>
+
+      <!-- Safe in the Vault where recordings are stored. -->
+      <RecordingSafe>PSMRecordings</RecordingSafe>
+
+      <!-- Watermark the live session view with the connected user's ID. -->
+      <EnableSessionWatermark>Yes</EnableSessionWatermark>
+    </SessionRecording>
+
+    <!-- =====================================================================
+         User Experience
+         ===================================================================== -->
+    <UserExperience>
+      <!-- Banner displayed at the top of the SSH session window. -->
+      <SessionBanner>*** CyberArk Privileged Session — This session is monitored and recorded ***</SessionBanner>
+
+      <!-- Disconnect the session if idle for more than N minutes. -->
+      <IdleTimeoutMinutes>30</IdleTimeoutMinutes>
+
+      <!-- Allow the user to request session termination from PVWA. -->
+      <AllowSuspendSession>Yes</AllowSuspendSession>
+    </UserExperience>
+
+    <!-- =====================================================================
+         Access Control
+         ===================================================================== -->
+    <AccessControl>
+      <!-- Platforms that may use this connection component.
+           Use "*" to allow all platforms, or list specific IDs. -->
+      <AllowedPlatforms>
+        <Platform ID="UnixSSH" />
+        <Platform ID="CiscoIOS" />
+        <Platform ID="JuniperJunOS" />
+        <Platform ID="WindowsOpenSSH" />
+      </AllowedPlatforms>
+
+      <!-- Require dual-control approval before the session starts. -->
+      <RequireDualControl>No</RequireDualControl>
+
+      <!-- Allow live monitoring by a second privileged user. -->
+      <AllowMonitoring>Yes</AllowMonitoring>
+    </AccessControl>
+  </PSMConnector>
+</PSMConnectors>
