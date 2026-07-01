@@ -2,9 +2,13 @@
 # =============================================================================
 # ReconcilePass.sh — Force-reset an account password using a privileged account.
 #
-# Executed on the target host by the privileged reconcile account (e.g., root
-# or a sudo-enabled admin). Resets the managed account to a new password
-# supplied by CPM without requiring knowledge of the current password.
+# Executed on the target host by the privileged reconcile account (root or a
+# sudo-enabled admin). Resets the managed account to a new password supplied
+# by CPM without requiring knowledge of the current password.
+#
+# This script is uploaded to the target host at /tmp/.cark_recon.sh by the
+# CPM pre-step or by a deployment Ansible/Chef task. It is called from
+# Process.ini over the SSH session.
 #
 # Usage:
 #   bash ReconcilePass.sh <target_username> <new_password>
