@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CyberArk PSM — Plink SSH Connection Component
+  ===============================================
+  Import via: PVWA → Administration → Platform Management →
+               Connection Components → Import Connection Component
+
+  This component tells PSM to launch plink.exe to establish an SSH
+  session to the target. PSM injects credentials from the Vault
+  transparently; the end user never sees the password or key.
+
+  Requires:
+    - plink.exe at the path configured in ClientApp below
+    - PSMPlink-UnixSSH.ps1 in the PSM Components directory
+-->
+<PSMConnectors>
+  <PSMConnector
+    ID="PSM-SSH-Plink"
+    DisplayName="SSH (Plink/PuTTY)"
+    Enabled="Yes"
+    Description="SSH session via PuTTY plink.exe with full PSM recording">
+
+    <ConnectionClientSettings>
+      <!-- PSM launches this script, which in turn calls plink.exe. -->
+      <ClientApp>powershell.exe</ClientApp>
+      <ClientAppArgs>-NonInteractive -ExecutionPolicy Bypass -File "C:\Program Files (x86)\CyberArk\PSM\Components\PSMPlink-UnixSSH.ps1" -Address "%ADDRESS%" -Port "%PORT%" -UserName "%USERNAME%" -Password "%PASSWORD%" -SessionId "%SESSIONID%"</ClientAppArgs>
+
+      <!-- Alternate: call plink.exe directly for password sessions. -->
+      <!--
+      <ClientApp>C:\Program Files\PuTTY\plink.exe</ClientApp>
+      <ClientAppArgs>-ssh -l %USERNAME% -pw %PASSWORD% -P %PORT% %ADDRESS%</ClientAppArgs>
+      -->
+
+      <DefaultPort>22</DefaultPort>
+      <ConnectionTimeout>30</ConnectionTimeout>
+    </ConnectionClientSettings>
+
+    <Authentication>
+      <Method>Password</Method>
+      <!-- Switch to PublicKey to use a .ppk file from the Vault. -->
+      <!-- <Method>PublicKey</Method> -->
+      <StrictHostKeyChecking>no</StrictHostKeyChecking>
+    </Authentication>
+
+    <SessionRecording>
+      <EnableRecording>Yes</EnableRecording>
+      <EnableTextRecording>Yes</EnableTextRecording>
+      <RecordingSafe>PSMRecordings</RecordingSafe>
+      <EnableSessionWatermark>Yes</EnableSessionWatermark>
+    </SessionRecording>
+
+    <UserExperience>
+      <SessionBanner>*** CyberArk Privileged Session (plink) — Monitored and Recorded ***</SessionBanner>
+      <IdleTimeoutMinutes>30</IdleTimeoutMinutes>
+    </UserExperience>
+
+    <AccessControl>
+      <AllowedPlatforms>
+        <Platform ID="UnixSSH" />
+      </AllowedPlatforms>
+      <RequireDualControl>No</RequireDualControl>
+      <AllowMonitoring>Yes</AllowMonitoring>
+    </AccessControl>
+  </PSMConnector>
+</PSMConnectors>
